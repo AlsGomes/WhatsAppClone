@@ -11,7 +11,7 @@ public class Grupo implements Serializable {
     private String id;
     private String nome;
     private String foto;
-    private List<Usuario> membros = new ArrayList<>();
+    private List<String> membrosId = new ArrayList<>();
 
     public Grupo() {
     }
@@ -47,7 +47,7 @@ public class Grupo implements Serializable {
         this.foto = foto;
     }
 
-    public List<Usuario> getMembros() {
-        return membros;
+    public List<String> getMembrosId() {
+        return membrosId;
     }
 }

@@ -32,10 +32,7 @@ import com.example.whatsappclone.util.Permission;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
@@ -117,53 +114,42 @@ public class CadastroGrupoActivity extends AppCompatActivity {
     private void createGroup() {
         final Grupo grupo = new Grupo();
         grupo.setNome(txtNomeGrupo.getText().toString().trim());
-        grupo.getMembros().addAll(adapterMembros.getMembros());
+        for (Usuario u : adapterMembros.getMembros()) {
+            grupo.getMembrosId().add(u.getId());
+        }
+        grupo.getMembrosId().add(Base64Custom.encode(FirebaseManager.getFirebaseAuth().getCurrentUser().getEmail()));
         grupo.setId(FirebaseManager.getDatabaseReference().child("grupos").push().getKey());
-        FirebaseManager.getDatabaseReference().child("usuarios").child(Base64Custom.encode(FirebaseManager.getFirebaseAuth().getCurrentUser().getEmail()))
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        Usuario u = snapshot.getValue(Usuario.class);
-                        grupo.getMembros().add(u);
-                        final DatabaseReference grupoReference = FirebaseManager.getDatabaseReference().child("grupos").child(grupo.getId());
-                        grupoReference.setValue(grupo);
-                        if (fotoGrupo != null) {
-                            FirebaseManager.getStorageReference().child("grupos").child(grupo.getId()).child("fotoGrupo").child("fotoGrupo.jpeg").putBytes(fotoGrupo)
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            Toast.makeText(getApplicationContext(), "O grupo foi criado, mas a foto não pôde ser salva", Toast.LENGTH_LONG).show();
-                                            e.printStackTrace();
-                                        }
-                                    })
-                                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                                        @Override
-                                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                            FirebaseManager.getStorageReference().child("grupos").child(grupo.getId()).child("fotoGrupo").child("fotoGrupo.jpeg")
-                                                    .getDownloadUrl()
-                                                    .addOnSuccessListener(
-                                                            new OnSuccessListener<Uri>() {
-                                                                @Override
-                                                                public void onSuccess(Uri uri) {
-                                                                    grupoReference.child("foto").setValue(uri.toString());
-                                                                    finish();
-                                                                }
-                                                            }
-                                                    );
-                                        }
-                                    });
-                        } else {
-                            finish();
+        final DatabaseReference grupoReference = FirebaseManager.getDatabaseReference().child("grupos").child(grupo.getId());
+        grupoReference.setValue(grupo);
+        if (fotoGrupo != null) {
+            FirebaseManager.getStorageReference().child("grupos").child(grupo.getId()).child("fotoGrupo").child("fotoGrupo.jpeg").putBytes(fotoGrupo)
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(getApplicationContext(), "O grupo foi criado, mas a foto não pôde ser salva", Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
                         }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            FirebaseManager.getStorageReference().child("grupos").child(grupo.getId()).child("fotoGrupo").child("fotoGrupo.jpeg")
+                                    .getDownloadUrl()
+                                    .addOnSuccessListener(
+                                            new OnSuccessListener<Uri>() {
+                                                @Override
+                                                public void onSuccess(Uri uri) {
+                                                    grupoReference.child("foto").setValue(uri.toString());
+                                                    finish();
+                                                }
+                                            }
+                                    );
+                        }
+                    });
+        } else {
+            finish();
+        }
 
-
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-
-                    }
-                });
     }
 
     private void validateUI() {
